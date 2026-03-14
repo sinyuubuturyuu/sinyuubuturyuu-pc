@@ -22,11 +22,55 @@
       </div>
 
       <nav class="home-actions" aria-label="アプリ選択">
-        <a class="action-button primary" href="./getujityretenkenhyou-pc/index.html">月次タイヤ点検表</a>
-        <a class="action-button primary" href="./getujinitijyoutenkenhyou-pc/index.html">月次日常点検表</a>
+        <a id="tireInspectionButton" class="action-button primary" href="./getujityretenkenhyou-pc/index.html">月次タイヤ点検表</a>
+        <a id="dailyInspectionButton" class="action-button primary" href="./getujinitijyoutenkenhyou-pc/index.html">月次日常点検表</a>
         <a class="action-button secondary" href="./settings.html">設定</a>
       </nav>
     </section>
   </main>
+
+  <script>
+    (function () {
+      const tireInspectionButton = document.getElementById("tireInspectionButton");
+      const dailyInspectionButton = document.getElementById("dailyInspectionButton");
+
+      exitFullscreenIfNeeded();
+      bindFullscreenNavigation(tireInspectionButton);
+      bindFullscreenNavigation(dailyInspectionButton);
+
+      function bindFullscreenNavigation(link) {
+        if (!link) {
+          return;
+        }
+
+        link.addEventListener("click", function (event) {
+          event.preventDefault();
+          openInFullscreen(link.href);
+        });
+      }
+
+      async function openInFullscreen(targetUrl) {
+        try {
+          if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+            await document.documentElement.requestFullscreen();
+          }
+        } catch (error) {
+          console.warn("Failed to enter fullscreen:", error);
+        } finally {
+          window.location.href = targetUrl;
+        }
+      }
+
+      async function exitFullscreenIfNeeded() {
+        try {
+          if (document.fullscreenElement && document.exitFullscreen) {
+            await document.exitFullscreen();
+          }
+        } catch (error) {
+          console.warn("Failed to exit fullscreen:", error);
+        }
+      }
+    })();
+  </script>
 </body>
 </html>
