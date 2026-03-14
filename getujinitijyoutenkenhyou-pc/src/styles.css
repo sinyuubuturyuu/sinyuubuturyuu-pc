@@ -28,6 +28,19 @@ body {
 .header-actions {
   margin-bottom: 10px;
 }
+
+.app-hero {
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.app-hero-image {
+  display: block;
+  width: min(100%, 1120px);
+  max-height: 32vh;
+  object-fit: contain;
+}
 .app-header h1 { margin: 0 0 10px; font-size: 18px; }
 
 .back-button {
@@ -224,6 +237,7 @@ th, td {
 
 @media (max-width: 768px) {
   .app-header { position: static; }
+  .app-hero-image { max-height: 22vh; }
   .hanko { width: 24px; height: 24px; }
   .hanko span { font-size: 9px; }
 }

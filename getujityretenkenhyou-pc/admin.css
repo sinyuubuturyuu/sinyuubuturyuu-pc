@@ -27,6 +27,19 @@ body {
   margin-bottom: 10px;
 }
 
+.app-hero {
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: center;
+}
+
+.app-hero-image {
+  display: block;
+  width: min(100%, 1120px);
+  max-height: 34vh;
+  object-fit: contain;
+}
+
 .back-button {
   display: inline-flex;
   align-items: center;
@@ -355,6 +368,10 @@ tr.detail-row td {
 }
 
 @media (max-width: 900px) {
+  .app-hero-image {
+    max-height: 24vh;
+  }
+
   .filter-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
