@@ -51,17 +51,20 @@ body {
 }
 
 .home-card {
+  width: min(100%, 1120px);
   display: grid;
   gap: 28px;
   justify-items: center;
-  padding: 32px 28px 28px;
+  padding: 24px 28px 28px;
   text-align: center;
 }
 
 .shell-logo {
-  width: min(100%, 320px);
+  width: min(100%, 980px);
+  max-height: calc(100vh - 260px);
   height: auto;
   display: block;
+  object-fit: contain;
 }
 
 .shell-copy {
@@ -300,6 +303,15 @@ body {
   .home-card,
   .settings-card {
     padding: 20px;
+  }
+
+  .home-card {
+    width: 100%;
+  }
+
+  .shell-logo {
+    width: 100%;
+    max-height: 42vh;
   }
 
   .settings-topbar {
