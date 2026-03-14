@@ -112,14 +112,14 @@
     elements.vehicleLocalStatus.textContent = "ローカル登録数: " + state.shared.vehicles.length + "件";
     elements.driverLocalStatus.textContent = "ローカル登録数: " + state.shared.drivers.length + "件";
 
-    renderValueList(elements.vehicleList, state.shared.vehicles);
-    renderValueList(elements.driverList, state.shared.drivers);
+    renderValueList(elements.vehicleList, state.shared.vehicles, removeVehicle);
+    renderValueList(elements.driverList, state.shared.drivers, removeDriver);
     renderBackupStatus(VEHICLE_BACKUP, elements.vehicleBackupStatus);
     renderBackupStatus(DRIVER_BACKUP, elements.driverBackupStatus);
     renderButtons();
   }
 
-  function renderValueList(container, values) {
+  function renderValueList(container, values, onDelete) {
     container.innerHTML = "";
 
     if (!values.length) {
@@ -133,7 +133,21 @@
     values.forEach(function (value) {
       const item = document.createElement("div");
       item.className = "value-item";
-      item.textContent = value;
+
+      const label = document.createElement("span");
+      label.className = "value-item-label";
+      label.textContent = value;
+
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className = "mini-button danger value-delete-button";
+      deleteButton.textContent = "削除";
+      deleteButton.addEventListener("click", function () {
+        onDelete(value);
+      });
+
+      item.appendChild(label);
+      item.appendChild(deleteButton);
       container.appendChild(item);
     });
   }
@@ -196,6 +210,30 @@
     elements.driverReadingInput.value = "";
     render();
     setGlobalStatus("乗務員を登録しました。");
+  }
+
+  function removeVehicle(value) {
+    if (!window.confirm("車両番号「" + value + "」を削除しますか？")) {
+      return;
+    }
+
+    sharedSettings.saveVehicles(state.shared.vehicles.filter(function (entry) {
+      return entry !== value;
+    }));
+    render();
+    setGlobalStatus("車両番号を削除しました。");
+  }
+
+  function removeDriver(value) {
+    if (!window.confirm("乗務員「" + value + "」を削除しますか？")) {
+      return;
+    }
+
+    sharedSettings.saveDrivers(state.shared.drivers.filter(function (entry) {
+      return entry !== value;
+    }));
+    render();
+    setGlobalStatus("乗務員を削除しました。");
   }
 
   async function initializeCloud() {

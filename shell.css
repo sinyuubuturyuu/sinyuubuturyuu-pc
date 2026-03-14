@@ -53,7 +53,7 @@ body {
 .home-card {
   width: min(100%, 1120px);
   display: grid;
-  gap: 28px;
+  gap: 7px;
   justify-items: center;
   padding: 24px 28px 28px;
   text-align: center;
@@ -100,6 +100,7 @@ body {
   width: min(100%, 420px);
   display: grid;
   gap: 14px;
+  margin-top: 14px;
 }
 
 .action-button,
@@ -279,12 +280,27 @@ body {
 }
 
 .value-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.8);
   font-weight: 700;
   word-break: break-word;
+}
+
+.value-item-label {
+  min-width: 0;
+  flex: 1 1 auto;
+  word-break: break-word;
+}
+
+.value-delete-button {
+  min-width: 72px;
+  flex: 0 0 auto;
 }
 
 .empty-list {
@@ -321,6 +337,15 @@ body {
 
   .button-row .mini-button,
   .align-start {
+    width: 100%;
+  }
+
+  .value-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .value-delete-button {
     width: 100%;
   }
 }
