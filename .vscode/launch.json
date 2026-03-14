@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "統合トップを開く",
+            "url": "http://localhost:8081/index.html",
+            "webRoot": "${workspaceFolder}",
+            "preLaunchTask": "start-static-server-8081"
+        }
+    ]
+}

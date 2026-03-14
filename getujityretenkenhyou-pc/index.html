@@ -1,0 +1,203 @@
+﻿<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>月次タイヤ点検表パソコン用</title>
+  <link rel="icon" type="image/png" href="./getujityretenkenhyou-pc.png">
+  <link rel="apple-touch-icon" href="./getujityretenkenhyou-pc.png">
+  <link rel="stylesheet" href="./admin.css?v=20260306b">
+  <script>
+    (function () {
+      if (!("serviceWorker" in navigator)) return;
+
+      window.addEventListener("load", async function () {
+        try {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          if (!registrations.length) return;
+
+          await Promise.all(registrations.map(function (registration) {
+            return registration.unregister();
+          }));
+
+          if ("caches" in window && typeof window.caches.keys === "function") {
+            const cacheKeys = await window.caches.keys();
+            await Promise.all(cacheKeys.map(function (key) {
+              return window.caches.delete(key);
+            }));
+          }
+
+          if (!sessionStorage.getItem("sw_cache_cleared_once")) {
+            sessionStorage.setItem("sw_cache_cleared_once", "1");
+            window.location.reload();
+          }
+        } catch (error) {
+          console.warn("Service Worker cleanup failed:", error);
+        }
+      });
+    })();
+  </script>
+</head>
+<body>
+  <main class="container">
+    <div class="page-top-actions no-print">
+      <a class="back-button" href="../index.html">トップへ戻る</a>
+    </div>
+    <h1>月次タイヤ点検表パソコン用</h1>
+
+    <section class="panel controls no-print" aria-label="検索条件">
+      <div class="filter-grid">
+        <label>
+          点検日（開始）
+          <div class="ym-selects">
+            <select id="filterFromYear" aria-label="点検日開始年">
+              <option value="">すべて</option>
+            </select>
+            <select id="filterFromMonth" aria-label="点検日開始月">
+              <option value="">すべて</option>
+            </select>
+          </div>
+        </label>
+        <label>
+          点検日（終了）
+          <div class="ym-selects">
+            <select id="filterToYear" aria-label="点検日終了年">
+              <option value="">すべて</option>
+            </select>
+            <select id="filterToMonth" aria-label="点検日終了月">
+              <option value="">すべて</option>
+            </select>
+          </div>
+        </label>
+        <label>
+          車両番号
+          <select id="filterVehicle"></select>
+        </label>
+        <label>
+          乗務員
+          <select id="filterDriver"></select>
+        </label>
+        <label class="wide">
+          報告事項キーワード
+          <input type="text" id="filterReport" placeholder="キーワード検索">
+        </label>
+      </div>
+      <div class="actions">
+        <button type="button" id="reloadBtn">再読込</button>
+        <button type="button" id="csvBtn" title="表示してある分だけ保存">CSV保存</button>
+        <button type="button" id="csvImportBtn">CSV取込</button>
+        <input type="file" id="csvImportInput" accept=".csv,text/csv" hidden>
+        <button type="button" id="printBtn">印刷</button>
+      </div>
+    </section>
+
+    <p id="statusText" class="status">読み込み中...</p>
+    <p id="errorText" class="error" role="alert" aria-live="assertive"></p>
+
+    <section class="panel" aria-label="一覧">
+      <div class="table-wrap">
+        <table id="resultTable">
+          <thead>
+            <tr>
+              <th>更新日時</th>
+              <th>
+                <span class="sortable-head">
+                  <span>点検日</span>
+                  <button type="button" class="sort-toggle no-print" data-sort-field="inspectionDate" aria-label="点検日で並び替え">▼</button>
+                </span>
+              </th>
+              <th>
+                <span class="sortable-head">
+                  <span>車両番号</span>
+                  <button type="button" class="sort-toggle no-print" data-sort-field="vehicleNumber" aria-label="車両番号で並び替え">↕</button>
+                </span>
+              </th>
+              <th>
+                <span class="sortable-head">
+                  <span>乗務員</span>
+                  <button type="button" class="sort-toggle no-print" data-sort-field="driverName" aria-label="乗務員で並び替え">↕</button>
+                </span>
+              </th>
+              <th>車種</th>
+              <th>報告事項</th>
+              <th class="actions-col no-print">操作</th>
+            </tr>
+          </thead>
+          <tbody id="resultBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <section id="printSheets" class="print-sheets" aria-hidden="true"></section>
+
+  <div id="editModal" class="modal-backdrop no-print" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+      <h2 id="editModalTitle">データ編集</h2>
+      <form id="editForm" class="edit-form">
+        <div class="edit-section">
+          <h3>基本情報</h3>
+          <div class="edit-grid">
+            <label>
+              点検日
+              <input type="date" id="editInspectionDate">
+            </label>
+            <label>
+              車両番号
+              <select id="editVehicleNumber"></select>
+            </label>
+            <label>
+              乗務員
+              <select id="editDriverName"></select>
+            </label>
+            <label>
+              車種
+              <select id="editTruckType"></select>
+            </label>
+            <label class="wide">
+              報告事項
+              <textarea id="editReportNote" rows="3" placeholder="報告事項"></textarea>
+            </label>
+          </div>
+        </div>
+
+        <div class="edit-section">
+          <h3>タイヤ</h3>
+          <div class="edit-tire-wrap">
+            <table class="edit-tire-table">
+              <thead>
+                <tr>
+                  <th>番号</th>
+                  <th>メーカー</th>
+                  <th>種類</th>
+                  <th>溝</th>
+                  <th>偏摩耗</th>
+                  <th>キズ</th>
+                  <th>空気圧</th>
+                  <th>状態</th>
+                </tr>
+              </thead>
+              <tbody id="editTireBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" id="saveEditBtn">保存</button>
+          <button type="button" id="cancelEditBtn">キャンセル</button>
+        </div>
+        <p id="editErrorText" class="error modal-error" role="alert" aria-live="assertive"></p>
+      </form>
+    </section>
+  </div>
+
+  <script src="./firebase/firebase-config.js?v=20260306b"></script>
+  <script src="../shared-settings.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="./admin.js?v=20260306b"></script>
+</body>
+</html>

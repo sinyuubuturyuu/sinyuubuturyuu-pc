@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>設定 | シンユウ物流 点検アプリ</title>
+  <meta name="description" content="車両番号と乗務員の共通設定">
+  <link rel="icon" href="./ChatGPT Image 2026年3月14日 21_34_50.png" type="image/png">
+  <link rel="apple-touch-icon" href="./ChatGPT Image 2026年3月14日 21_34_50.png">
+  <link rel="stylesheet" href="./shell.css">
+</head>
+<body class="shell-body">
+  <main class="shell-page">
+    <section class="shell-card settings-card">
+      <div class="settings-topbar">
+        <a class="back-link" href="./index.html">トップへ戻る</a>
+        <h1>設定</h1>
+      </div>
+
+      <div class="settings-grid">
+        <section class="settings-section" aria-labelledby="vehicleHeading">
+          <div class="section-head">
+            <h2 id="vehicleHeading">車両番号</h2>
+            <p>登録した内容は2つのアプリで共通利用できます。</p>
+          </div>
+
+          <label class="field">
+            <span>車両番号を登録</span>
+            <div class="field-row">
+              <input id="vehicleInput" type="text" autocomplete="off" placeholder="例: 品川100 あ 1234">
+              <button id="addVehicleButton" class="mini-button primary" type="button">登録</button>
+            </div>
+          </label>
+
+          <div class="button-row">
+            <button id="saveVehiclesButton" class="mini-button" type="button">保存</button>
+            <button id="restoreVehiclesButton" class="mini-button" type="button">復元</button>
+            <button id="deleteVehiclesButton" class="mini-button danger" type="button">削除</button>
+          </div>
+
+          <div class="field">
+            <span>登録済み車両番号</span>
+            <div id="vehicleList" class="value-list" aria-live="polite"></div>
+          </div>
+
+          <p id="vehicleLocalStatus" class="status-text" aria-live="polite"></p>
+          <p id="vehicleBackupStatus" class="status-text" aria-live="polite"></p>
+        </section>
+
+        <section class="settings-section" aria-labelledby="driverHeading">
+          <div class="section-head">
+            <h2 id="driverHeading">乗務員</h2>
+            <p>氏名のみでも登録できます。読みを入れると並び順に反映しやすくなります。</p>
+          </div>
+
+          <label class="field">
+            <span>乗務員を登録</span>
+            <div class="field-column">
+              <input id="driverNameInput" type="text" autocomplete="off" placeholder="氏名">
+              <input id="driverReadingInput" type="text" autocomplete="off" placeholder="読み">
+            </div>
+            <button id="addDriverButton" class="mini-button primary align-start" type="button">登録</button>
+          </label>
+
+          <div class="button-row">
+            <button id="saveDriversButton" class="mini-button" type="button">保存</button>
+            <button id="restoreDriversButton" class="mini-button" type="button">復元</button>
+            <button id="deleteDriversButton" class="mini-button danger" type="button">削除</button>
+          </div>
+
+          <div class="field">
+            <span>登録済み乗務員</span>
+            <div id="driverList" class="value-list" aria-live="polite"></div>
+          </div>
+
+          <p id="driverLocalStatus" class="status-text" aria-live="polite"></p>
+          <p id="driverBackupStatus" class="status-text" aria-live="polite"></p>
+        </section>
+      </div>
+
+      <p id="globalStatus" class="global-status" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <script src="./shared-settings.js"></script>
+  <script src="./getujityretenkenhyou-pc/firebase/firebase-config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="./settings.js"></script>
+</body>
+</html>

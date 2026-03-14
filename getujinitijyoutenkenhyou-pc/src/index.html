@@ -1,0 +1,83 @@
+﻿<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>月次日常点検アプリ</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-actions">
+      <a class="back-button" href="../../index.html">トップへ戻る</a>
+    </div>
+    <h1>月次日常点検記録</h1>
+    <div id="toolbar" class="toolbar">
+      <label>対象月<input type="month" id="month" value="2026-01" /></label>
+      <label>車番
+        <select id="vehicle" disabled>
+          <option value="">候補を読込中...</option>
+        </select>
+      </label>
+      <label>運転者
+        <select id="driver" disabled>
+          <option value="">候補を読込中...</option>
+        </select>
+      </label>
+      <button id="loadBtn" type="button">読込</button>
+      <button id="saveBtn" type="button">保存</button>
+      <button id="exportExcelBtn" type="button">Excel保存</button>
+      <button id="exportCsvBtn" type="button">CSV保存</button>
+      <button id="importCsvBtn" type="button">CSV読込</button>
+      <button id="printBtn" type="button">印刷</button>
+      <button id="helpBtn" type="button">ヘルプ</button>
+      <span id="status"></span>
+      <input id="csvImportInput" type="file" accept=".csv,text/csv" hidden />
+    </div>
+  </header>
+
+  <main class="sheet-wrap">
+    <section class="sheet" aria-label="月次日常点検記録表">
+      <table id="inspectionTable">
+        <thead>
+          <tr>
+            <th id="companyHead" colspan="8" class="company">有限会社シンユウ物流</th>
+            <th id="titleHead" colspan="24" class="title">月 次 点 検 記 録 表</th>
+            <th id="operationHead" colspan="4" class="manager-title">運行管理者</th>
+            <th id="maintenanceHead" colspan="4" class="manager-title">整備管理者</th>
+          </tr>
+          <tr>
+            <th id="monthHead" colspan="4" class="month-cell">令和8年 <span id="monthText">1</span>月</th>
+            <th id="vehicleHead" colspan="4" class="vehicle-cell">車番: <span id="vehicleText">-</span></th>
+            <th id="driverHead" colspan="24" class="driver-cell">運転者名（点検者）: <span id="driverText">-</span></th>
+            <th id="operationManagerSlot" colspan="4" class="stamp-slot"></th>
+            <th id="maintenanceManagerSlot" colspan="4" class="stamp-slot"></th>
+          </tr>
+          <tr id="datesRow">
+            <th colspan="4" rowspan="2">点検個所</th>
+            <th colspan="4" rowspan="2" class="content-head">
+              <div class="content-head-inner">
+                <span class="content-title">点検内容</span>
+                <span class="day-mark-stack">
+                  <span class="day-mark-cell">日</span>
+                  <span class="day-mark-cell">曜</span>
+                </span>
+              </div>
+            </th>
+          </tr>
+          <tr id="daysRow"></tr>
+        </thead>
+        <tbody id="inspectionBody"></tbody>
+        <tfoot>
+          <tr id="maintenanceFooterRow">
+            <td colspan="8" class="bottom-label">整備管理者 印</td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>
+</main>
+
+  <script src="../../shared-settings.js"></script>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

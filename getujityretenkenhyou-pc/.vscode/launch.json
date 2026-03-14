@@ -1,0 +1,13 @@
+﻿{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Admin App (localhost:8080)",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "url": "http://localhost:8080/admin.html",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "ensure-admin-8080"
+    }
+  ]
+}

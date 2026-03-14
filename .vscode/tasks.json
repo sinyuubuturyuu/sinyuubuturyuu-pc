@@ -1,0 +1,11 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "start-static-server-8081",
+            "type": "shell",
+            "command": "if (-not (Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue)) { Start-Process node -ArgumentList 'dev-static-server.cjs','8081' -WorkingDirectory '${workspaceFolder}' -WindowStyle Hidden }",
+            "problemMatcher": []
+        }
+    ]
+}

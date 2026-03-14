@@ -1,0 +1,350 @@
+﻿:root {
+  --paper: #ffffff;
+  --ink: #1e2a35;
+  --grid: #47535e;
+  --thin: #93a0ab;
+  --bg: #e7edf2;
+  --accent: #0f5d79;
+  --seal: #b30c12;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #dbe6ee, #f7f9fb 45%);
+  color: var(--ink);
+  font-family: "Yu Gothic UI", "Meiryo", sans-serif;
+}
+
+.app-header {
+  padding: 12px;
+  background: #f8fbff;
+  border-bottom: 1px solid #cad5de;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  overflow-x: auto;
+}
+.header-actions {
+  margin-bottom: 10px;
+}
+.app-header h1 { margin: 0 0 10px; font-size: 18px; }
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid #a8b6c2;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.back-button:hover {
+  border-color: var(--accent);
+}
+
+.toolbar {
+  display: grid;
+  grid-template-columns: 170px 260px 220px 90px 90px 96px 96px 90px 90px minmax(180px, 1fr);
+  gap: 8px;
+  align-items: end;
+  width: max-content;
+}
+label { display: grid; gap: 3px; font-size: 12px; font-weight: 600; min-width: 0; }
+input,
+select {
+  width: 100%;
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid #a8b6c2;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fff;
+}
+button {
+  height: 36px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+#status { font-size: 12px; align-self: center; justify-self: start; }
+
+.stamp-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sheet-wrap { padding: 12px; }
+.sheet {
+  background: var(--paper);
+  border: 1px solid #a9b5bf;
+  overflow: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: max-content;
+  table-layout: fixed;
+}
+th, td {
+  border: 1px solid var(--grid);
+  font-size: 12px;
+  text-align: center;
+  padding: 2px 4px;
+  height: 28px;
+}
+.sheet thead tr:nth-child(-n+2) th {
+  height: 56px;
+}
+.company, .title { font-size: 28px; font-weight: 700; }
+.month-cell, .vehicle-cell, .driver-cell { text-align: left; padding-left: 8px; }
+.manager-title { background: #eef3f7; }
+.content-head { padding: 0; }
+.content-head-inner {
+  display: grid;
+  grid-template-columns: 1fr 30px;
+  align-items: stretch;
+  height: 100%;
+}
+.content-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.day-mark-stack {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  border-left: 1px solid var(--grid);
+  height: 100%;
+}
+.day-mark-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  text-align: center;
+  font-weight: 700;
+  background: transparent;
+}
+.day-mark-cell:first-child {
+  border-bottom: 1px solid var(--grid);
+}
+
+.day-label, .dow-label { width: 30px; background: #eff5fa; }
+.day { width: 30px; font-size: 11px; }
+.holiday-trigger {
+  cursor: pointer;
+  user-select: none;
+}
+.holiday-trigger:hover {
+  background: #eef8ff;
+}
+.day.is-holiday,
+.check-cell.is-holiday {
+  background: #f7ddd5;
+  color: #8b1e14;
+}
+
+.category {
+  width: 120px;
+  writing-mode: horizontal-tb;
+  font-weight: 700;
+  background: #f8fbfe;
+}
+.content {
+  width: 200px;
+  text-align: left;
+  padding-left: 6px;
+}
+.check-cell {
+  width: 30px;
+  cursor: pointer;
+  font-weight: 700;
+  user-select: none;
+}
+.check-cell:hover { background: #eef8ff; }
+.check-cell.is-holiday:hover { background: #f7ddd5; }
+
+.stamp-slot {
+  background: #fff;
+  cursor: pointer;
+  min-height: 56px;
+  padding: 0;
+}
+.bottom-label {
+  text-align: left;
+  padding-left: 8px;
+  font-weight: 700;
+}
+.bottom-day-cell {
+  width: 30px;
+  height: 58px;
+  padding: 0;
+  vertical-align: middle;
+  cursor: pointer;
+}
+.bottom-day-cell > div { margin: 0 auto; }
+
+.hanko {
+  margin: 0 auto;
+  border: 2px solid var(--seal);
+  border-radius: 50%;
+  position: relative;
+  display: grid;
+  place-items: center;
+  color: var(--seal);
+  transform: rotate(-8deg);
+}
+.hanko-small {
+  width: 26px;
+  height: 26px;
+}
+.hanko-large {
+  width: 52px;
+  height: 52px;
+  border-width: 3px;
+}
+.hanko span {
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0;
+}
+.hanko-large span {
+  font-size: 19px;
+}
+
+@media (max-width: 768px) {
+  .app-header { position: static; }
+  .hanko { width: 24px; height: 24px; }
+  .hanko span { font-size: 9px; }
+}
+
+@page {
+  size: A4 landscape;
+  margin: 6mm;
+}
+
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .app-header {
+    display: none;
+  }
+
+  .sheet-wrap {
+    padding: 0;
+  }
+
+  .sheet {
+    border: 0;
+    overflow: visible;
+  }
+
+  table {
+    width: 100%;
+  }
+
+  th,
+  td {
+    font-size: 8px;
+    padding: 1px;
+    height: 20px;
+  }
+
+  .sheet thead tr:nth-child(-n+2) th {
+    height: 38px;
+  }
+
+  .company,
+  .title {
+    font-size: 18px;
+  }
+
+  .month-cell,
+  .vehicle-cell,
+  .driver-cell,
+  .manager-title,
+  .bottom-label {
+    font-size: 9px;
+  }
+
+  .category {
+    width: 72px;
+    font-size: 9px;
+  }
+
+  .content {
+    width: 152px;
+    font-size: 8px;
+    padding-left: 3px;
+  }
+
+  .day-label,
+  .dow-label,
+  .day,
+  .check-cell,
+  .bottom-day-cell {
+    width: 14px;
+    min-width: 14px;
+    max-width: 14px;
+    font-size: 6px;
+  }
+
+  .content-head-inner {
+    grid-template-columns: 1fr 18px;
+  }
+
+  .day-mark-stack {
+    grid-template-rows: 1fr 1fr;
+    width: 18px;
+  }
+
+  .day-mark-cell {
+    font-family: "Yu Gothic", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 7px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .stamp-slot {
+    min-height: 38px;
+  }
+
+  .bottom-day-cell {
+    height: 38px;
+  }
+
+  .hanko-small {
+    width: 16px;
+    height: 16px;
+    border-width: 1px;
+  }
+
+  .hanko-large {
+    width: 34px;
+    height: 34px;
+    border-width: 2px;
+  }
+
+  .hanko span {
+    font-size: 6px;
+  }
+
+  .hanko-large span {
+    font-size: 11px;
+  }
+}
