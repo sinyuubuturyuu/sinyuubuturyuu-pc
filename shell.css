@@ -51,17 +51,17 @@ body {
 }
 
 .home-card {
-  width: min(100%, 1120px);
+  width: min(100%, 560px);
   display: grid;
   gap: 7px;
   justify-items: center;
-  padding: 24px 28px 28px;
+  padding: 16px 18px 18px;
   text-align: center;
 }
 
 .shell-logo {
-  width: min(100%, 980px);
-  max-height: calc(100vh - 260px);
+  width: min(100%, 490px);
+  max-height: calc(100vh - 320px);
   height: auto;
   display: block;
   object-fit: contain;
@@ -97,10 +97,10 @@ body {
 }
 
 .home-actions {
-  width: min(100%, 420px);
+  width: min(100%, 260px);
   display: grid;
-  gap: 14px;
-  margin-top: 14px;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .action-button,
@@ -122,9 +122,9 @@ body {
 }
 
 .action-button {
-  min-height: 58px;
-  padding: 14px 18px;
-  font-size: 1.05rem;
+  min-height: 46px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
 }
 
 .mini-button {

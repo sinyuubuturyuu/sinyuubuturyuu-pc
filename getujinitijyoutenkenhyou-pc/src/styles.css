@@ -101,6 +101,7 @@ button {
   background: var(--paper);
   border: 1px solid #a9b5bf;
   overflow: auto;
+  min-height: calc(100vh - 160px);
 }
 
 table {
