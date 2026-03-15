@@ -7,6 +7,8 @@
   <meta name="description" content="車両番号と乗務員の共通設定">
   <link rel="icon" href="./icon-sinyuubuturyuu-pc.png" type="image/png">
   <link rel="apple-touch-icon" href="./icon-sinyuubuturyuu-pc.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#ffffff">
   <link rel="stylesheet" href="./shell.css">
 </head>
 <body class="shell-body">
@@ -82,6 +84,19 @@
     </section>
   </main>
 
+  <script>
+    (function () {
+      if (!("serviceWorker" in navigator)) {
+        return;
+      }
+
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("./sw.js").catch(function (error) {
+          console.warn("Failed to register service worker:", error);
+        });
+      });
+    })();
+  </script>
   <script src="./shared-settings.js"></script>
   <script src="./getujityretenkenhyou-pc/firebase/firebase-config.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>

@@ -7,6 +7,8 @@
   <meta name="description" content="月次タイヤ点検表と月次日常点検表の統合ランチャー">
   <link rel="icon" href="./icon-sinyuubuturyuu-pc.png" type="image/png">
   <link rel="apple-touch-icon" href="./icon-sinyuubuturyuu-pc.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#ffffff">
   <link rel="stylesheet" href="./shell.css">
 </head>
 <body class="shell-body">
@@ -34,9 +36,22 @@
       const tireInspectionButton = document.getElementById("tireInspectionButton");
       const dailyInspectionButton = document.getElementById("dailyInspectionButton");
 
+      registerInstallServiceWorker();
       exitFullscreenIfNeeded();
       bindFullscreenNavigation(tireInspectionButton);
       bindFullscreenNavigation(dailyInspectionButton);
+
+      function registerInstallServiceWorker() {
+        if (!("serviceWorker" in navigator)) {
+          return;
+        }
+
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("./sw.js").catch(function (error) {
+            console.warn("Failed to register service worker:", error);
+          });
+        });
+      }
 
       function bindFullscreenNavigation(link) {
         if (!link) {
