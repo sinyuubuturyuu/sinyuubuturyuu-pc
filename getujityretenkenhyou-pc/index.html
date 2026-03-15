@@ -198,6 +198,7 @@
     (function () {
       if (window.launcherWindow) {
         window.launcherWindow.maximizeCurrentWindowIfRequested();
+        window.launcherWindow.bindReturnToLauncher(document.querySelector(".back-button"));
       }
     })();
   </script>

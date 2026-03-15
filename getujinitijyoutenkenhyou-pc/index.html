@@ -1,11 +1,31 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="refresh" content="0; url=./src/index.html" />
   <title>Redirecting...</title>
+  <script>
+    (function () {
+      const targetUrl = new URL("./src/index.html", window.location.href);
+      targetUrl.search = window.location.search;
+      targetUrl.hash = window.location.hash;
+      window.location.replace(targetUrl.toString());
+    })();
+  </script>
 </head>
 <body>
-  <p><a href="./src/index.html">アプリを開く</a></p>
+  <p><a id="openAppLink" href="./src/index.html">アプリを開く</a></p>
+  <script>
+    (function () {
+      const fallbackLink = document.getElementById("openAppLink");
+      if (!fallbackLink) {
+        return;
+      }
+
+      const targetUrl = new URL(fallbackLink.getAttribute("href"), window.location.href);
+      targetUrl.search = window.location.search;
+      targetUrl.hash = window.location.hash;
+      fallbackLink.href = targetUrl.toString();
+    })();
+  </script>
 </body>
 </html>

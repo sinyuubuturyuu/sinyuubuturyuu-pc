@@ -79,14 +79,15 @@
 </main>
 
   <script src="../../launcher-window.js"></script>
-  <script src="../../shared-settings.js"></script>
   <script>
     (function () {
       if (window.launcherWindow) {
         window.launcherWindow.maximizeCurrentWindowIfRequested();
+        window.launcherWindow.bindReturnToLauncher(document.querySelector(".back-button"));
       }
     })();
   </script>
+  <script src="../../shared-settings.js"></script>
   <script type="module" src="./main.js"></script>
 </body>
 </html>
