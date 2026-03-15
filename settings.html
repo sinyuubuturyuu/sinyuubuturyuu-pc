@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>設定 | シンユウ物流パソコン用</title>
-  <meta name="description" content="車両番号と乗務員の共通設定">
+  <meta name="description" content="車両番号と運転者名の共通設定">
   <link rel="icon" href="./icon-sinyuubuturyuu-pc.png" type="image/png">
   <link rel="apple-touch-icon" href="./icon-sinyuubuturyuu-pc.png">
   <link rel="manifest" href="./manifest.webmanifest">
@@ -23,14 +23,14 @@
         <section class="settings-section" aria-labelledby="vehicleHeading">
           <div class="section-head">
             <h2 id="vehicleHeading">車両番号</h2>
-            <p>登録した内容は2つのアプリで共通利用できます。</p>
+            <p>追加した候補は2つのアプリで共通利用できます。</p>
           </div>
 
           <label class="field">
-            <span>車両番号を登録</span>
+            <span>車両番号を追加</span>
             <div class="field-row">
-              <input id="vehicleInput" type="text" autocomplete="off" placeholder="例: 品川100 あ 1234">
-              <button id="addVehicleButton" class="mini-button primary" type="button">登録</button>
+              <input id="vehicleInput" type="text" autocomplete="off" placeholder="例: 品川 500 あ 1234">
+              <button id="addVehicleButton" class="mini-button primary" type="button">追加</button>
             </div>
           </label>
 
@@ -41,7 +41,7 @@
           </div>
 
           <div class="field">
-            <span>登録済み車両番号</span>
+            <span>追加済み車両番号</span>
             <div id="vehicleList" class="value-list" aria-live="polite"></div>
           </div>
 
@@ -51,17 +51,17 @@
 
         <section class="settings-section" aria-labelledby="driverHeading">
           <div class="section-head">
-            <h2 id="driverHeading">乗務員</h2>
-            <p>氏名のみでも登録できます。読みを入れると並び順に反映しやすくなります。</p>
+            <h2 id="driverHeading">運転者名</h2>
+            <p>名前と読みを登録できます。読みは並び替えや検索に利用されます。</p>
           </div>
 
           <label class="field">
-            <span>乗務員を登録</span>
+            <span>運転者名を追加</span>
             <div class="field-column">
-              <input id="driverNameInput" type="text" autocomplete="off" placeholder="氏名">
+              <input id="driverNameInput" type="text" autocomplete="off" placeholder="運転者名">
               <input id="driverReadingInput" type="text" autocomplete="off" placeholder="読み">
             </div>
-            <button id="addDriverButton" class="mini-button primary align-start" type="button">登録</button>
+            <button id="addDriverButton" class="mini-button primary align-start" type="button">追加</button>
           </label>
 
           <div class="button-row">
@@ -71,7 +71,7 @@
           </div>
 
           <div class="field">
-            <span>登録済み乗務員</span>
+            <span>追加済み運転者名</span>
             <div id="driverList" class="value-list" aria-live="polite"></div>
           </div>
 
