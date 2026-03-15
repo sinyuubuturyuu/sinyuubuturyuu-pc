@@ -125,6 +125,7 @@ const GROUPS = [
     contents: ["検査証・保険証・記録簿の備付", "非常用信号具・工具類・停止表示板", "報告事項・変更事項"]
   }
 ];
+const INSPECTION_ITEM_LABELS = GROUPS.flatMap((group) => group.contents);
 
 const monthEl = document.getElementById("month");
 const vehicleEl = document.getElementById("vehicle");
@@ -154,6 +155,7 @@ const state = {
   operationManager: "",
   maintenanceManager: "",
   maintenanceBottomByDay: {},
+  maintenanceRecordsByDay: {},
   holidayDays: [],
   loadedDocId: null,
   vehicleOptions: [],
@@ -531,7 +533,128 @@ function checkKey(itemIndex, day) {
 }
 
 function getInspectionItemCount() {
-  return GROUPS.reduce((total, group) => total + group.contents.length, 0);
+  return INSPECTION_ITEM_LABELS.length;
+}
+
+function normalizeMaintenanceRecordValue(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function sanitizeMaintenanceRecordsByDay(recordsByDay = {}) {
+  return Object.fromEntries(
+    Object.entries(recordsByDay).filter(([, value]) => normalizeMaintenanceRecordValue(value))
+  );
+}
+
+function getMaintenanceRecordsByDayFromSource(source = {}) {
+  return sanitizeMaintenanceRecordsByDay({
+    ...(source.maintenanceRecordsByDay || {}),
+    ...(source.maintenanceNotesByDay || {})
+  });
+}
+
+function getTriangleItemsForDay(day) {
+  return INSPECTION_ITEM_LABELS.filter((label, rowIndex) => state.checks[checkKey(rowIndex, day)] === "▲");
+}
+
+function syncMaintenanceRecordsByDay() {
+  state.maintenanceRecordsByDay = Object.fromEntries(
+    Object.entries(state.maintenanceRecordsByDay).filter(([dayText, value]) => {
+      const day = Number(dayText);
+      return day >= 1 && day <= getDaysInSelectedMonth() && getTriangleItemsForDay(day).length && normalizeMaintenanceRecordValue(value);
+    })
+  );
+}
+
+function promptMaintenanceRecordForDay(day) {
+  const triangleItems = getTriangleItemsForDay(day);
+  if (!triangleItems.length) {
+    return false;
+  }
+
+  const currentValue = state.maintenanceRecordsByDay[String(day)] || "";
+  const nextValue = window.prompt(
+    [
+      `${day}日の整備記録を入力してください。`,
+      `点検内容: ${triangleItems.join("、")}`,
+      "",
+      "空欄で OK を押すと整備記録を削除します。"
+    ].join("\n"),
+    currentValue
+  );
+
+  if (nextValue === null) {
+    return false;
+  }
+
+  const normalizedValue = normalizeMaintenanceRecordValue(nextValue);
+  if (normalizedValue) {
+    state.maintenanceRecordsByDay[String(day)] = normalizedValue;
+  } else {
+    delete state.maintenanceRecordsByDay[String(day)];
+  }
+
+  return true;
+}
+
+function getMaintenanceRecordEntries() {
+  syncMaintenanceRecordsByDay();
+  const entries = [];
+  const daysInMonth = getDaysInSelectedMonth();
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const triangleItems = getTriangleItemsForDay(day);
+    if (!triangleItems.length) {
+      continue;
+    }
+
+    const savedRecord = normalizeMaintenanceRecordValue(state.maintenanceRecordsByDay[String(day)] || "");
+    const inspectionText = triangleItems.join("、");
+    entries.push({
+      day,
+      text: savedRecord ? `${inspectionText} ${savedRecord}` : inspectionText,
+      hasSavedRecord: Boolean(savedRecord)
+    });
+  }
+
+  return entries;
+}
+
+function renderMaintenanceRecordCell() {
+  const recordCell = document.getElementById("maintenanceRecordCell");
+  if (!recordCell) {
+    return;
+  }
+
+  recordCell.replaceChildren();
+  const entries = getMaintenanceRecordEntries();
+  if (!entries.length) {
+    return;
+  }
+
+  const list = document.createElement("div");
+  list.className = "maintenance-record-list";
+
+  entries.forEach(({ day, text, hasSavedRecord }) => {
+    const entry = document.createElement("div");
+    entry.className = "maintenance-record-entry";
+    if (!hasSavedRecord) {
+      entry.classList.add("is-fallback");
+    }
+    entry.textContent = `${day}日 ${text}`;
+    entry.title = `${day}日の整備記録を入力・訂正`;
+    entry.addEventListener("click", () => {
+      const updated = promptMaintenanceRecordForDay(day);
+      if (!updated) {
+        return;
+      }
+      renderMaintenanceRecordCell();
+      setStatus(`${day}日の整備記録を更新しました。保存すると Firebase に反映されます。`);
+    });
+    list.append(entry);
+  });
+
+  recordCell.append(list);
 }
 
 function isHolidayDay(day) {
@@ -651,6 +774,8 @@ function markHolidayForDay(day) {
     state.holidayDays = state.holidayDays.filter((holidayDay) => holidayDay !== day);
     clearHolidayChecks(day);
     setHolidayHeaderState(day, false);
+    syncMaintenanceRecordsByDay();
+    renderMaintenanceRecordCell();
     setStatus(`${day}日の休日設定を解除しました。保存すると反映されます。`);
     return;
   }
@@ -662,6 +787,8 @@ function markHolidayForDay(day) {
   state.holidayDays = [...state.holidayDays, day].sort((left, right) => left - right);
   applyHolidayChecks(day);
   setHolidayHeaderState(day, true);
+  syncMaintenanceRecordsByDay();
+  renderMaintenanceRecordCell();
   setStatus(`${day}日を休日に設定しました。保存すると反映されます。`);
 }
 
@@ -778,6 +905,7 @@ function toggleBottomStampByDay(day, value) {
 
 function renderBottomStampRow() {
   maintenanceFooterRowEl.querySelectorAll(".bottom-day-cell").forEach((el) => el.remove());
+  const maintenanceRecordFooterCell = document.getElementById("maintenanceRecordFooterCell");
   const daysInMonth = getDaysInSelectedMonth();
   for (let day = 1; day <= daysInMonth; day += 1) {
     const cell = document.createElement("td");
@@ -787,7 +915,7 @@ function renderBottomStampRow() {
     cell.addEventListener("click", () => {
       toggleBottomStampByDay(day, "若本");
     });
-    maintenanceFooterRowEl.append(cell);
+    maintenanceFooterRowEl.insertBefore(cell, maintenanceRecordFooterCell);
   }
 }
 
@@ -864,6 +992,7 @@ function showHelp() {
 function renderBody() {
   bodyEl.innerHTML = "";
   const daysInMonth = getDaysInSelectedMonth();
+  const itemCount = getInspectionItemCount();
   let rowIndex = 0;
   GROUPS.forEach((group) => {
     group.contents.forEach((line, groupLineIndex) => {
@@ -898,15 +1027,30 @@ function renderBody() {
           }
           const next = rotateCheck(state.checks[key] || "");
           state.checks[key] = next;
+          if (!next) {
+            delete state.checks[key];
+          }
+          syncMaintenanceRecordsByDay();
           setCheckCellState(td, next, false);
+          renderMaintenanceRecordCell();
         });
         tr.append(td);
+      }
+
+      if (rowIndex === 0) {
+        const maintenanceRecordCell = document.createElement("td");
+        maintenanceRecordCell.id = "maintenanceRecordCell";
+        maintenanceRecordCell.className = "maintenance-record-cell";
+        maintenanceRecordCell.rowSpan = itemCount;
+        tr.append(maintenanceRecordCell);
       }
 
       bodyEl.append(tr);
       rowIndex += 1;
     });
   });
+
+  renderMaintenanceRecordCell();
 }
 
 function syncHeaderInfo() {
@@ -934,6 +1078,7 @@ function resetRecordState() {
   state.operationManager = "";
   state.maintenanceManager = "";
   state.maintenanceBottomByDay = {};
+  state.maintenanceRecordsByDay = {};
   state.holidayDays = [];
   state.loadedDocId = null;
 }
@@ -1682,6 +1827,7 @@ async function downloadExcel() {
 
 function buildCsvRows() {
   syncHolidayChecks();
+  syncMaintenanceRecordsByDay();
   const driverIdentity = getDriverIdentity();
 
   const rows = [
@@ -1721,6 +1867,15 @@ function buildCsvRows() {
       }
     });
 
+  Object.entries(sanitizeMaintenanceRecordsByDay(state.maintenanceRecordsByDay))
+    .sort(([leftDay], [rightDay]) => Number(leftDay) - Number(rightDay))
+    .forEach(([day, value]) => {
+      const normalizedValue = normalizeMaintenanceRecordValue(value);
+      if (normalizedValue) {
+        rows.push(["maintenanceRecord", day, "", normalizedValue]);
+      }
+    });
+
   return rows;
 }
 
@@ -1755,6 +1910,7 @@ function parseImportedCsv(rows) {
     operationManager: "",
     maintenanceManager: "",
     maintenanceBottomByDay: {},
+    maintenanceRecordsByDay: {},
     holidayDays: []
   };
 
@@ -1790,6 +1946,15 @@ function parseImportedCsv(rows) {
       const day = Number(dayOrKey);
       if (Number.isInteger(day) && day >= 1 && value) {
         imported.maintenanceBottomByDay[String(day)] = value;
+      }
+      return;
+    }
+
+    if (recordType === "maintenanceRecord" || recordType === "maintenanceNote") {
+      const day = Number(dayOrKey);
+      const normalizedValue = normalizeMaintenanceRecordValue(value);
+      if (Number.isInteger(day) && day >= 1 && normalizedValue) {
+        imported.maintenanceRecordsByDay[String(day)] = normalizedValue;
       }
       return;
     }
@@ -1837,9 +2002,16 @@ function applyImportedRecord(imported) {
       return day >= 1 && day <= daysInMonth && Boolean(value);
     })
   );
+  state.maintenanceRecordsByDay = Object.fromEntries(
+    Object.entries(sanitizeMaintenanceRecordsByDay(imported.maintenanceRecordsByDay)).filter(([dayText]) => {
+      const day = Number(dayText);
+      return day >= 1 && day <= daysInMonth;
+    })
+  );
   state.holidayDays = mergeHolidayDays(imported.holidayDays, state.checks).filter((day) => day >= 1 && day <= daysInMonth);
 
   syncHolidayChecks();
+  syncMaintenanceRecordsByDay();
   syncHeaderInfo();
   renderDays();
   renderBody();
@@ -1969,8 +2141,10 @@ async function loadRecord() {
   setStamp("operationManager", record.data.operationManager || "");
   setStamp("maintenanceManager", record.data.maintenanceManager || "");
   state.maintenanceBottomByDay = record.data.maintenanceBottomByDay || {};
+  state.maintenanceRecordsByDay = getMaintenanceRecordsByDayFromSource(record.data);
   state.holidayDays = extractHolidayDays(record.data, state.checks);
   syncHolidayChecks();
+  syncMaintenanceRecordsByDay();
   renderDays();
   renderBody();
   renderBottomStampRow();
@@ -1996,6 +2170,7 @@ async function saveRecord() {
 
   const existingRecord = await findRecord(month, vehicle, driver);
   syncHolidayChecks();
+  syncMaintenanceRecordsByDay();
   const holidayPayload = buildHolidayPayload(state.holidayDays, state.checks);
   const rawDocId = buildRecordKey(month, vehicle, driverIdentity.storageValue);
   const displayDocId = buildRecordKey(month, vehicle, driverIdentity.displayValue);
@@ -2012,6 +2187,8 @@ async function saveRecord() {
     operationManager: state.operationManager,
     maintenanceManager: state.maintenanceManager,
     maintenanceBottomByDay: state.maintenanceBottomByDay,
+    maintenanceRecordsByDay: sanitizeMaintenanceRecordsByDay(state.maintenanceRecordsByDay),
+    maintenanceNotesByDay: sanitizeMaintenanceRecordsByDay(state.maintenanceRecordsByDay),
     ...holidayPayload,
     updatedAt: serverTimestamp()
   };

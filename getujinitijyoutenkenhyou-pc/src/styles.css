@@ -212,6 +212,41 @@ th, td {
   min-height: 56px;
   padding: 0;
 }
+.maintenance-record-head,
+.maintenance-record-cell,
+.maintenance-record-footer {
+  width: 220px;
+  min-width: 220px;
+  border-left-width: 2px;
+}
+.maintenance-record-head {
+  background: #eef3f7;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.maintenance-record-cell {
+  background: #fbfcfd;
+  padding: 8px 10px;
+  vertical-align: top;
+  text-align: left;
+}
+.maintenance-record-footer {
+  background: #fbfcfd;
+}
+.maintenance-record-list {
+  display: grid;
+  gap: 6px;
+}
+.maintenance-record-entry {
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  cursor: pointer;
+}
+.maintenance-record-entry.is-fallback {
+  color: #586571;
+  font-style: italic;
+}
 .bottom-label {
   text-align: left;
   padding-left: 8px;
@@ -313,6 +348,22 @@ th, td {
   .manager-title,
   .bottom-label {
     font-size: 9px;
+  }
+
+  .maintenance-record-head,
+  .maintenance-record-cell,
+  .maintenance-record-footer {
+    width: 130px;
+    min-width: 130px;
+  }
+
+  .maintenance-record-cell {
+    padding: 4px 5px;
+    font-size: 7px;
+  }
+
+  .maintenance-record-list {
+    gap: 3px;
   }
 
   .category {
