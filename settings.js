@@ -42,7 +42,10 @@
       drivers: null
     },
     cloudReady: false,
+    directoryEnabled: false,
     db: null,
+    directoryDb: null,
+    directoryError: "",
     working: false
   };
 
@@ -261,35 +264,65 @@
   }
 
   async function initializeCloud() {
+    state.directoryEnabled = hasDirectorySyncTarget();
+
     try {
-      state.db = await ensureDb();
+      state.db = await ensurePrimaryDb();
       state.cloudReady = true;
+      state.directoryDb = null;
+
+      if (state.directoryEnabled) {
+        try {
+          state.directoryDb = await ensureDirectoryDb();
+          state.directoryError = "";
+        } catch (error) {
+          state.directoryDb = null;
+          state.directoryError = formatErrorReason(error);
+          console.warn("Failed to initialize employee directory cloud:", error);
+        }
+      }
+
       await refreshBackups();
     } catch (error) {
       state.cloudReady = false;
       state.db = null;
+      state.directoryDb = null;
+      state.directoryError = "";
       render();
       setGlobalStatus("Firebase に接続できないため、バックアップ機能は使えません。", true);
       console.warn("Failed to initialize settings cloud:", error);
     }
   }
 
-  async function ensureDb() {
+  async function ensurePrimaryDb() {
     if (!window.firebase || !window.APP_FIREBASE_CONFIG) {
       throw new Error("firebase_config_missing");
     }
 
-    if (!window.firebase.apps.length) {
-      window.firebase.initializeApp(window.APP_FIREBASE_CONFIG);
+    return ensureDb(window.APP_FIREBASE_CONFIG, window.APP_FIREBASE_SYNC_OPTIONS || {}, null);
+  }
+
+  async function ensureDirectoryDb() {
+    if (!hasDirectorySyncTarget()) {
+      return null;
     }
 
-    const auth = window.firebase.auth();
-    const syncOptions = window.APP_FIREBASE_SYNC_OPTIONS || {};
+    const syncOptions = window.APP_FIREBASE_DIRECTORY_SYNC_OPTIONS || {};
+    return ensureDb(
+      window.APP_FIREBASE_DIRECTORY_CONFIG,
+      syncOptions,
+      syncOptions.appName || "employee-directory"
+    );
+  }
+
+  async function ensureDb(config, syncOptions, appName) {
+    const app = getOrCreateFirebaseApp(config, appName);
+    const auth = app.auth();
     if (syncOptions.useAnonymousAuth !== false && !auth.currentUser) {
       await auth.signInAnonymously();
     }
 
-    return window.firebase.firestore();
+    return app.firestore();
   }
 
   function getCollectionName() {
@@ -297,8 +330,72 @@
     return syncOptions.collection || DEFAULT_COLLECTION;
   }
 
+  function getDirectoryCollectionName() {
+    const syncOptions = window.APP_FIREBASE_DIRECTORY_SYNC_OPTIONS || {};
+    return syncOptions.collection || DEFAULT_COLLECTION;
+  }
+
+  function hasDirectorySyncTarget() {
+    const syncOptions = window.APP_FIREBASE_DIRECTORY_SYNC_OPTIONS || {};
+    return Boolean(syncOptions.enabled && window.APP_FIREBASE_DIRECTORY_CONFIG);
+  }
+
+  function getOrCreateFirebaseApp(config, appName) {
+    if (!appName) {
+      if (!window.firebase.apps.length) {
+        return window.firebase.initializeApp(config);
+      }
+      return window.firebase.app();
+    }
+
+    const existingApp = window.firebase.apps.find(function (app) {
+      return app.name === appName;
+    });
+    if (existingApp) {
+      return existingApp;
+    }
+
+    return window.firebase.initializeApp(config, appName);
+  }
+
+  function getDocId(definition, syncOptions) {
+    const docIds = syncOptions.docIds || {};
+    return docIds[definition.kind] || definition.docId;
+  }
+
   function getBackupDocRef(definition) {
     return state.db.collection(getCollectionName()).doc(definition.docId);
+  }
+
+  function getDirectoryDocRef(definition) {
+    if (!state.directoryDb) {
+      return null;
+    }
+
+    const syncOptions = window.APP_FIREBASE_DIRECTORY_SYNC_OPTIONS || {};
+    return state.directoryDb
+      .collection(getDirectoryCollectionName())
+      .doc(getDocId(definition, syncOptions));
+  }
+
+  async function ensureDirectoryReady() {
+    if (!state.directoryEnabled) {
+      return null;
+    }
+
+    if (state.directoryDb) {
+      return state.directoryDb;
+    }
+
+    try {
+      state.directoryDb = await ensureDirectoryDb();
+      state.directoryError = "";
+      return state.directoryDb;
+    } catch (error) {
+      state.directoryDb = null;
+      state.directoryError = formatErrorReason(error);
+      throw error;
+    }
   }
 
   async function refreshBackups() {
@@ -337,17 +434,34 @@
     render();
 
     try {
-      await getBackupDocRef(definition).set({
-        kind: definition.kind,
-        slot: 1,
-        values: values,
-        valueCount: values.length,
-        clientUpdatedAt: new Date().toISOString(),
-        updatedAt: window.firebase.firestore.FieldValue.serverTimestamp(),
-        source: "integrated-settings"
-      });
+      await getBackupDocRef(definition).set(buildBackupPayload(definition, values, "integrated-settings"));
+
+      let directorySaveFailed = false;
+      let directoryError = "";
+      if (state.directoryEnabled) {
+        try {
+          await ensureDirectoryReady();
+          await getDirectoryDocRef(definition).set(
+            buildBackupPayload(definition, values, "integrated-settings-directory")
+          );
+          state.directoryError = "";
+        } catch (error) {
+          directorySaveFailed = true;
+          directoryError = formatErrorReason(error);
+          state.directoryError = directoryError;
+          console.warn("Failed to save employee directory backup:", error);
+        }
+      }
+
       await refreshBackups();
-      setGlobalStatus(definition.label + "のバックアップを保存しました。");
+      if (directorySaveFailed) {
+        const detail = directoryError ? " (" + directoryError + ")" : "";
+        setGlobalStatus(definition.label + "のバックアップを保存しました。社員名簿用 Firebase への追加保存は失敗しました。" + detail, true);
+      } else if (state.directoryEnabled) {
+        setGlobalStatus(definition.label + "のバックアップを保存しました。社員名簿用 Firebase にも保存しました。");
+      } else {
+        setGlobalStatus(definition.label + "のバックアップを保存しました。");
+      }
     } catch (error) {
       setGlobalStatus(definition.label + "のバックアップ保存に失敗しました。", true);
       console.warn("Failed to save backup:", error);
@@ -355,6 +469,34 @@
       state.working = false;
       render();
     }
+  }
+
+  function buildBackupPayload(definition, values, source) {
+    return {
+      kind: definition.kind,
+      slot: 1,
+      values: values,
+      valueCount: values.length,
+      clientUpdatedAt: new Date().toISOString(),
+      updatedAt: window.firebase.firestore.FieldValue.serverTimestamp(),
+      source: source
+    };
+  }
+
+  function formatErrorReason(error) {
+    if (!error) {
+      return "";
+    }
+
+    if (error.code) {
+      return String(error.code);
+    }
+
+    if (error.message) {
+      return String(error.message);
+    }
+
+    return "";
   }
 
   async function restoreBackup(definition) {
