@@ -3,22 +3,12 @@
   const FULL_WINDOW_QUERY_VALUE = "full";
   const WINDOW_TOKEN_QUERY_KEY = "windowToken";
   const RETURN_CHANNEL_NAME = "launcher-return-channel";
+  const RETURN_MESSAGE_TYPE = "return-to-launcher";
+
   const openedInspectionWindows = new Map();
   const returnChannel = typeof BroadcastChannel === "function"
     ? new BroadcastChannel(RETURN_CHANNEL_NAME)
     : null;
-
-  function appendFullWindowParam(rawUrl) {
-    const targetUrl = new URL(rawUrl, window.location.href);
-    targetUrl.searchParams.set(FULL_WINDOW_QUERY_KEY, FULL_WINDOW_QUERY_VALUE);
-    return targetUrl.toString();
-  }
-
-  function appendWindowTokenParam(rawUrl, token) {
-    const targetUrl = new URL(rawUrl, window.location.href);
-    targetUrl.searchParams.set(WINDOW_TOKEN_QUERY_KEY, token);
-    return targetUrl.toString();
-  }
 
   function createWindowToken() {
     if (window.crypto && typeof window.crypto.randomUUID === "function") {
@@ -26,6 +16,29 @@
     }
 
     return `inspection-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
+  function resolveUrl(rawUrl) {
+    return new URL(rawUrl, window.location.href);
+  }
+
+  function createInspectionWindowUrl(rawUrl, windowToken) {
+    const targetUrl = resolveUrl(rawUrl);
+    targetUrl.searchParams.set(FULL_WINDOW_QUERY_KEY, FULL_WINDOW_QUERY_VALUE);
+    targetUrl.searchParams.set(WINDOW_TOKEN_QUERY_KEY, windowToken);
+    return targetUrl.toString();
+  }
+
+  function getWindowParams(search = window.location.search) {
+    return new URLSearchParams(search);
+  }
+
+  function isFullWindowMode(search = window.location.search) {
+    return getWindowParams(search).get(FULL_WINDOW_QUERY_KEY) === FULL_WINDOW_QUERY_VALUE;
+  }
+
+  function getWindowToken(search = window.location.search) {
+    return getWindowParams(search).get(WINDOW_TOKEN_QUERY_KEY) || "";
   }
 
   function buildPopupFeatures() {
@@ -45,24 +58,17 @@
     ].join(",");
   }
 
-  function openInspectionWindow(rawUrl) {
-    const windowToken = createWindowToken();
-    const targetUrl = appendWindowTokenParam(appendFullWindowParam(rawUrl), windowToken);
-    const popup = window.open("", "_blank", buildPopupFeatures());
-
-    if (popup && !popup.closed) {
-      try {
-        openedInspectionWindows.set(windowToken, popup);
-        popup.location.replace(targetUrl);
-        popup.focus();
-        return true;
-      } catch (error) {
-        console.warn("Failed to open popup window:", error);
+  function cleanupClosedInspectionWindows() {
+    for (const [token, popup] of openedInspectionWindows.entries()) {
+      if (!popup || popup.closed) {
+        openedInspectionWindows.delete(token);
       }
     }
+  }
 
-    window.location.href = targetUrl;
-    return false;
+  function rememberInspectionWindow(windowToken, popup) {
+    cleanupClosedInspectionWindows();
+    openedInspectionWindows.set(windowToken, popup);
   }
 
   function closeInspectionWindow(targetWindowOrToken) {
@@ -80,38 +86,109 @@
       console.warn("Failed to close inspection window:", error);
     }
 
+    cleanupClosedInspectionWindows();
     return targetWindow.closed;
   }
 
-  function cleanupClosedInspectionWindows() {
-    for (const [token, popup] of openedInspectionWindows.entries()) {
-      if (!popup || popup.closed) {
-        openedInspectionWindows.delete(token);
-      }
+  function navigateCurrentWindow(targetUrl) {
+    window.location.href = targetUrl;
+  }
+
+  function focusLauncherWindow(targetUrl) {
+    const openerWindow = window.opener;
+
+    if (!openerWindow || openerWindow.closed) {
+      return false;
+    }
+
+    try {
+      openerWindow.location.href = targetUrl;
+      openerWindow.focus();
+      return true;
+    } catch (error) {
+      console.warn("Failed to focus launcher window:", error);
+      return false;
     }
   }
 
-  function handleReturnRequest(message) {
-    if (!message || message.type !== "return-to-launcher" || !message.windowToken) {
-      return;
-    }
+  function createReturnMessage(targetUrl, windowToken) {
+    return {
+      type: RETURN_MESSAGE_TYPE,
+      targetUrl: targetUrl,
+      windowToken: windowToken
+    };
+  }
 
-    const popup = openedInspectionWindows.get(message.windowToken);
-    if (!popup) {
-      return;
+  function handleReturnRequest(message) {
+    if (!message || message.type !== RETURN_MESSAGE_TYPE || !message.windowToken) {
+      return false;
     }
 
     if (message.targetUrl) {
-      try {
-        window.location.href = message.targetUrl;
-        window.focus();
-      } catch (error) {
-        console.warn("Failed to navigate launcher window:", error);
-      }
+      navigateCurrentWindow(message.targetUrl);
+      window.focus();
     }
 
     closeInspectionWindow(message.windowToken);
-    cleanupClosedInspectionWindows();
+    return true;
+  }
+
+  function notifyLauncherReturn(targetUrl, windowToken) {
+    const message = createReturnMessage(targetUrl, windowToken);
+    let handled = false;
+
+    try {
+      const openerWindow = window.opener;
+      if (openerWindow
+        && !openerWindow.closed
+        && openerWindow.launcherWindow
+        && typeof openerWindow.launcherWindow.handleReturnRequest === "function") {
+        handled = openerWindow.launcherWindow.handleReturnRequest(message) || handled;
+      }
+    } catch (error) {
+      console.warn("Failed to call launcher return handler:", error);
+    }
+
+    if (returnChannel && windowToken) {
+      returnChannel.postMessage(message);
+      handled = true;
+    }
+
+    return handled;
+  }
+
+  function closeCurrentInspectionWindow() {
+    if (closeInspectionWindow(window)) {
+      return true;
+    }
+
+    try {
+      window.open("", "_self");
+    } catch (error) {
+      console.warn("Failed to prepare current window for close:", error);
+    }
+
+    return closeInspectionWindow(window);
+  }
+
+  function openInspectionWindow(rawUrl) {
+    const windowToken = createWindowToken();
+    const targetUrl = createInspectionWindowUrl(rawUrl, windowToken);
+    const popup = window.open("", "_blank", buildPopupFeatures());
+
+    if (popup && !popup.closed) {
+      try {
+        rememberInspectionWindow(windowToken, popup);
+        popup.location.replace(targetUrl);
+        popup.focus();
+        return true;
+      } catch (error) {
+        console.warn("Failed to open popup window:", error);
+      }
+    }
+
+    navigateCurrentWindow(targetUrl);
+    return false;
   }
 
   function bindInspectionLaunch(link) {
@@ -126,10 +203,7 @@
   }
 
   function maximizeCurrentWindowIfRequested() {
-    const params = new URLSearchParams(window.location.search);
-    const isFullWindowMode = params.get(FULL_WINDOW_QUERY_KEY) === FULL_WINDOW_QUERY_VALUE;
-
-    if (!isFullWindowMode) {
+    if (!isFullWindowMode()) {
       return false;
     }
 
@@ -151,66 +225,39 @@
     return true;
   }
 
+  // Returning from a child window needs three fallbacks:
+  // 1. notify the launcher, 2. close this popup, 3. navigate if close is blocked.
   function bindReturnToLauncher(link) {
     if (!link) {
       return;
     }
 
     link.addEventListener("click", function (event) {
-      const params = new URLSearchParams(window.location.search);
-      const isFullWindowMode = params.get(FULL_WINDOW_QUERY_KEY) === FULL_WINDOW_QUERY_VALUE;
-      const windowToken = params.get(WINDOW_TOKEN_QUERY_KEY);
-      const openerWindow = window.opener;
-
-      if (!isFullWindowMode) {
+      if (!isFullWindowMode()) {
         return;
       }
 
       event.preventDefault();
 
-      const targetUrl = new URL(link.href, window.location.href).toString();
+      const targetUrl = resolveUrl(link.href).toString();
+      const windowToken = getWindowToken();
 
-      if (returnChannel && windowToken) {
-        returnChannel.postMessage({
-          type: "return-to-launcher",
-          targetUrl: targetUrl,
-          windowToken: windowToken
-        });
+      notifyLauncherReturn(targetUrl, windowToken);
+      closeCurrentInspectionWindow();
+
+      if (!window.closed) {
+        focusLauncherWindow(targetUrl);
       }
 
       if (!window.closed) {
-        closeInspectionWindow(window);
-      }
-
-      if (!window.closed) {
-        try {
-          window.open("", "_self");
-        } catch (error) {
-          console.warn("Failed to reopen current window before close:", error);
-        }
-        closeInspectionWindow(window);
-      }
-
-      try {
-        if (openerWindow && !openerWindow.closed) {
-          if (openerWindow.launcherWindow
-            && typeof openerWindow.launcherWindow.closeInspectionWindow === "function") {
-            openerWindow.launcherWindow.closeInspectionWindow(window);
-          }
-          openerWindow.location.href = targetUrl;
-          openerWindow.focus();
-        }
-      } catch (error) {
-        console.warn("Failed to focus launcher window:", error);
-      }
-
-      if (!window.closed) {
-        window.location.href = targetUrl;
+        navigateCurrentWindow(targetUrl);
       }
     });
   }
 
   window.addEventListener("beforeunload", cleanupClosedInspectionWindows);
+  window.addEventListener("pagehide", cleanupClosedInspectionWindows);
+  window.addEventListener("focus", cleanupClosedInspectionWindows);
 
   if (returnChannel) {
     returnChannel.addEventListener("message", function (event) {
@@ -222,6 +269,7 @@
     bindInspectionLaunch: bindInspectionLaunch,
     maximizeCurrentWindowIfRequested: maximizeCurrentWindowIfRequested,
     bindReturnToLauncher: bindReturnToLauncher,
-    closeInspectionWindow: closeInspectionWindow
+    closeInspectionWindow: closeInspectionWindow,
+    handleReturnRequest: handleReturnRequest
   };
 })();

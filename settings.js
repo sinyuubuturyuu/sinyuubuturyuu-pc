@@ -10,7 +10,7 @@
   const DRIVER_BACKUP = Object.freeze({
     kind: "drivers",
     docId: "monthly_tire_company_settings_backup_drivers_slot1",
-    label: "乗務員"
+    label: "運転者名"
   });
   const DEFAULT_COLLECTION = "monthly_tire_autosave";
 
@@ -82,9 +82,7 @@
     elements.restoreVehiclesButton.addEventListener("click", function () {
       void restoreBackup(VEHICLE_BACKUP);
     });
-    elements.deleteVehiclesButton.addEventListener("click", function () {
-      void deleteBackup(VEHICLE_BACKUP);
-    });
+    elements.deleteVehiclesButton.addEventListener("click", clearAllVehicles);
 
     elements.saveDriversButton.addEventListener("click", function () {
       void saveBackup(DRIVER_BACKUP);
@@ -92,9 +90,7 @@
     elements.restoreDriversButton.addEventListener("click", function () {
       void restoreBackup(DRIVER_BACKUP);
     });
-    elements.deleteDriversButton.addEventListener("click", function () {
-      void deleteBackup(DRIVER_BACKUP);
-    });
+    elements.deleteDriversButton.addEventListener("click", clearAllDrivers);
   }
 
   function refreshSharedState() {
@@ -175,8 +171,8 @@
     elements.saveDriversButton.disabled = disabledCloud || !state.shared.drivers.length;
     elements.restoreVehiclesButton.disabled = disabledCloud || !state.backupMeta.vehicles;
     elements.restoreDriversButton.disabled = disabledCloud || !state.backupMeta.drivers;
-    elements.deleteVehiclesButton.disabled = disabledCloud || !state.backupMeta.vehicles;
-    elements.deleteDriversButton.disabled = disabledCloud || !state.backupMeta.drivers;
+    elements.deleteVehiclesButton.disabled = state.working || !state.shared.vehicles.length;
+    elements.deleteDriversButton.disabled = state.working || !state.shared.drivers.length;
   }
 
   function addVehicle() {
@@ -187,21 +183,21 @@
     }
 
     if (state.shared.vehicles.includes(value)) {
-      setGlobalStatus("同じ車両番号は登録済みです。", true);
+      setGlobalStatus("同じ車両番号はすでに登録されています。", true);
       return;
     }
 
     sharedSettings.addVehicle(value);
     elements.vehicleInput.value = "";
     render();
-    setGlobalStatus("車両番号を登録しました。");
+    setGlobalStatus("車両番号を追加しました。");
   }
 
   function addDriver() {
     const name = sharedSettings.normalizeText(elements.driverNameInput.value);
     const reading = sharedSettings.normalizeText(elements.driverReadingInput.value);
     if (!name) {
-      setGlobalStatus("乗務員名を入力してください。", true);
+      setGlobalStatus("運転者名を入力してください。", true);
       return;
     }
 
@@ -209,7 +205,7 @@
     elements.driverNameInput.value = "";
     elements.driverReadingInput.value = "";
     render();
-    setGlobalStatus("乗務員を登録しました。");
+    setGlobalStatus("運転者名を追加しました。");
   }
 
   function removeVehicle(value) {
@@ -225,7 +221,7 @@
   }
 
   function removeDriver(value) {
-    if (!window.confirm("乗務員「" + value + "」を削除しますか？")) {
+    if (!window.confirm("運転者名「" + value + "」を削除しますか？")) {
       return;
     }
 
@@ -233,7 +229,35 @@
       return entry !== value;
     }));
     render();
-    setGlobalStatus("乗務員を削除しました。");
+    setGlobalStatus("運転者名を削除しました。");
+  }
+
+  function clearAllVehicles() {
+    if (!state.shared.vehicles.length) {
+      return;
+    }
+
+    if (!window.confirm("この端末内の車両番号を全件削除しますか？\nFirebase バックアップは削除しません。")) {
+      return;
+    }
+
+    sharedSettings.saveVehicles([]);
+    render();
+    setGlobalStatus("この端末内の車両番号を全件削除しました。Firebase バックアップは残っています。");
+  }
+
+  function clearAllDrivers() {
+    if (!state.shared.drivers.length) {
+      return;
+    }
+
+    if (!window.confirm("この端末内の運転者名を全件削除しますか？\nFirebase バックアップは削除しません。")) {
+      return;
+    }
+
+    sharedSettings.saveDrivers([]);
+    render();
+    setGlobalStatus("この端末内の運転者名を全件削除しました。Firebase バックアップは残っています。");
   }
 
   async function initializeCloud() {
@@ -358,27 +382,6 @@
     } catch (error) {
       setGlobalStatus(definition.label + "の復元に失敗しました。", true);
       console.warn("Failed to restore backup:", error);
-    } finally {
-      state.working = false;
-      render();
-    }
-  }
-
-  async function deleteBackup(definition) {
-    if (!window.confirm(definition.label + "のバックアップを削除しますか？")) {
-      return;
-    }
-
-    state.working = true;
-    render();
-
-    try {
-      await getBackupDocRef(definition).delete();
-      await refreshBackups();
-      setGlobalStatus(definition.label + "のバックアップを削除しました。");
-    } catch (error) {
-      setGlobalStatus(definition.label + "のバックアップ削除に失敗しました。", true);
-      console.warn("Failed to delete backup:", error);
     } finally {
       state.working = false;
       render();
