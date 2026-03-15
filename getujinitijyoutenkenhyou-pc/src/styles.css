@@ -103,6 +103,50 @@ button {
   overflow: auto;
   min-height: calc(100vh - 160px);
 }
+.maintenance-note-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(18, 31, 43, 0.38);
+  z-index: 20;
+}
+.maintenance-note-modal {
+  width: min(100%, 520px);
+  padding: 18px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #cad5de;
+  box-shadow: 0 18px 48px rgba(16, 32, 45, 0.22);
+}
+.maintenance-note-modal h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+.maintenance-note-meta {
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+.maintenance-note-field {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+.maintenance-note-field textarea {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+}
+.maintenance-note-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+.maintenance-note-modal-backdrop[hidden] {
+  display: none;
+}
 
 body.window-mode-full {
   background: #eef3f7;
@@ -302,6 +346,10 @@ th, td {
 }
 
 @media print {
+  .maintenance-note-modal-backdrop {
+    display: none !important;
+  }
+
   body {
     background: #fff;
     color: #000;

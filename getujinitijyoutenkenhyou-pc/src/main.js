@@ -149,6 +149,12 @@ const exportCsvBtnEl = document.getElementById("exportCsvBtn");
 const importCsvBtnEl = document.getElementById("importCsvBtn");
 const helpBtnEl = document.getElementById("helpBtn");
 const csvImportInputEl = document.getElementById("csvImportInput");
+const maintenanceNoteModalEl = document.getElementById("maintenanceNoteModal");
+const maintenanceNoteModalDayEl = document.getElementById("maintenanceNoteModalDay");
+const maintenanceNoteModalItemsEl = document.getElementById("maintenanceNoteModalItems");
+const maintenanceNoteInputEl = document.getElementById("maintenanceNoteInput");
+const maintenanceNoteSaveBtnEl = document.getElementById("maintenanceNoteSaveBtn");
+const maintenanceNoteCancelBtnEl = document.getElementById("maintenanceNoteCancelBtn");
 
 const state = {
   checks: {},
@@ -162,6 +168,7 @@ const state = {
   driverOptions: [],
   driverStorageMap: {}
 };
+let maintenanceNoteDialogResolve = null;
 
 function columnNumberToLabel(columnNumber) {
   let value = columnNumber;
@@ -566,22 +573,42 @@ function syncMaintenanceRecordsByDay() {
   );
 }
 
-function promptMaintenanceRecordForDay(day) {
+function closeMaintenanceNoteDialog(result = null) {
+  maintenanceNoteModalEl.hidden = true;
+  const resolve = maintenanceNoteDialogResolve;
+  maintenanceNoteDialogResolve = null;
+  if (resolve) {
+    resolve(result);
+  }
+}
+
+function openMaintenanceNoteDialog(day, triangleItems) {
+  if (maintenanceNoteDialogResolve) {
+    closeMaintenanceNoteDialog(null);
+  }
+
+  maintenanceNoteModalDayEl.textContent = `${day}日の整備記録`;
+  maintenanceNoteModalItemsEl.textContent = `点検内容: ${triangleItems.join("、")}`;
+  maintenanceNoteInputEl.value = state.maintenanceRecordsByDay[String(day)] || "";
+  maintenanceNoteModalEl.hidden = false;
+
+  requestAnimationFrame(() => {
+    maintenanceNoteInputEl.focus();
+    maintenanceNoteInputEl.select();
+  });
+
+  return new Promise((resolve) => {
+    maintenanceNoteDialogResolve = resolve;
+  });
+}
+
+async function promptMaintenanceRecordForDay(day) {
   const triangleItems = getTriangleItemsForDay(day);
   if (!triangleItems.length) {
     return false;
   }
 
-  const currentValue = state.maintenanceRecordsByDay[String(day)] || "";
-  const nextValue = window.prompt(
-    [
-      `${day}日の整備記録を入力してください。`,
-      `点検内容: ${triangleItems.join("、")}`,
-      "",
-      "空欄で OK を押すと整備記録を削除します。"
-    ].join("\n"),
-    currentValue
-  );
+  const nextValue = await openMaintenanceNoteDialog(day, triangleItems);
 
   if (nextValue === null) {
     return false;
@@ -643,8 +670,8 @@ function renderMaintenanceRecordCell() {
     }
     entry.textContent = `${day}日 ${text}`;
     entry.title = `${day}日の整備記録を入力・訂正`;
-    entry.addEventListener("click", () => {
-      const updated = promptMaintenanceRecordForDay(day);
+    entry.addEventListener("click", async () => {
+      const updated = await promptMaintenanceRecordForDay(day);
       if (!updated) {
         return;
       }
@@ -2269,6 +2296,33 @@ csvImportInputEl.addEventListener("change", (event) => {
   importCsvFile(file).catch((error) => {
     setStatus(`CSV読込失敗: ${error.message}`, true);
   });
+});
+
+maintenanceNoteSaveBtnEl.addEventListener("click", () => {
+  closeMaintenanceNoteDialog(maintenanceNoteInputEl.value);
+});
+
+maintenanceNoteCancelBtnEl.addEventListener("click", () => {
+  closeMaintenanceNoteDialog(null);
+});
+
+maintenanceNoteModalEl.addEventListener("click", (event) => {
+  if (event.target === maintenanceNoteModalEl) {
+    closeMaintenanceNoteDialog(null);
+  }
+});
+
+maintenanceNoteInputEl.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeMaintenanceNoteDialog(null);
+    return;
+  }
+
+  if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+    event.preventDefault();
+    closeMaintenanceNoteDialog(maintenanceNoteInputEl.value);
+  }
 });
 
 syncHeaderInfo();

@@ -80,6 +80,22 @@
     </section>
 </main>
 
+  <div id="maintenanceNoteModal" class="maintenance-note-modal-backdrop" hidden>
+    <section class="maintenance-note-modal" role="dialog" aria-modal="true" aria-labelledby="maintenanceNoteModalTitle">
+      <h2 id="maintenanceNoteModalTitle">整備記録</h2>
+      <p id="maintenanceNoteModalDay" class="maintenance-note-meta"></p>
+      <p id="maintenanceNoteModalItems" class="maintenance-note-meta"></p>
+      <label class="maintenance-note-field">
+        <span>内容</span>
+        <textarea id="maintenanceNoteInput" rows="4"></textarea>
+      </label>
+      <div class="maintenance-note-actions">
+        <button id="maintenanceNoteSaveBtn" type="button">OK</button>
+        <button id="maintenanceNoteCancelBtn" type="button">キャンセル</button>
+      </div>
+    </section>
+  </div>
+
   <script src="../../launcher-window.js"></script>
   <script>
     (function () {
