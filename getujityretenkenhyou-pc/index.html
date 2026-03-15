@@ -193,6 +193,14 @@
     </section>
   </div>
 
+  <script src="../launcher-window.js"></script>
+  <script>
+    (function () {
+      if (window.launcherWindow) {
+        window.launcherWindow.maximizeCurrentWindowIfRequested();
+      }
+    })();
+  </script>
   <script src="./firebase/firebase-config.js?v=20260306b"></script>
   <script src="../shared-settings.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>

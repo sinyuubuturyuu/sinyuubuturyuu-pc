@@ -25,6 +25,18 @@ body {
   padding: 12px;
 }
 
+body.window-mode-full {
+  background: #eef3f8;
+}
+
+.window-mode-full .container {
+  padding: 8px;
+}
+
+.window-mode-full .panel {
+  margin-bottom: 8px;
+}
+
 .page-top-actions {
   margin-bottom: 10px;
 }

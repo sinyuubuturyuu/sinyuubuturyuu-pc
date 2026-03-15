@@ -104,6 +104,24 @@ button {
   min-height: calc(100vh - 160px);
 }
 
+body.window-mode-full {
+  background: #eef3f7;
+}
+
+.window-mode-full .app-header {
+  padding: 8px 12px;
+}
+
+.window-mode-full .sheet-wrap {
+  padding: 0;
+}
+
+.window-mode-full .sheet {
+  border-left: 0;
+  border-right: 0;
+  min-height: calc(100vh - 132px);
+}
+
 table {
   border-collapse: collapse;
   width: max-content;

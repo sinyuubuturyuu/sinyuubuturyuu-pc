@@ -31,15 +31,18 @@
     </section>
   </main>
 
+  <script src="./launcher-window.js"></script>
   <script>
     (function () {
       const tireInspectionButton = document.getElementById("tireInspectionButton");
       const dailyInspectionButton = document.getElementById("dailyInspectionButton");
 
       registerInstallServiceWorker();
-      exitFullscreenIfNeeded();
-      bindFullscreenNavigation(tireInspectionButton);
-      bindFullscreenNavigation(dailyInspectionButton);
+
+      if (window.launcherWindow) {
+        window.launcherWindow.bindInspectionLaunch(tireInspectionButton);
+        window.launcherWindow.bindInspectionLaunch(dailyInspectionButton);
+      }
 
       function registerInstallServiceWorker() {
         if (!("serviceWorker" in navigator)) {
@@ -51,39 +54,6 @@
             console.warn("Failed to register service worker:", error);
           });
         });
-      }
-
-      function bindFullscreenNavigation(link) {
-        if (!link) {
-          return;
-        }
-
-        link.addEventListener("click", function (event) {
-          event.preventDefault();
-          openInFullscreen(link.href);
-        });
-      }
-
-      async function openInFullscreen(targetUrl) {
-        try {
-          if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-            await document.documentElement.requestFullscreen();
-          }
-        } catch (error) {
-          console.warn("Failed to enter fullscreen:", error);
-        } finally {
-          window.location.href = targetUrl;
-        }
-      }
-
-      async function exitFullscreenIfNeeded() {
-        try {
-          if (document.fullscreenElement && document.exitFullscreen) {
-            await document.exitFullscreen();
-          }
-        } catch (error) {
-          console.warn("Failed to exit fullscreen:", error);
-        }
       }
     })();
   </script>
