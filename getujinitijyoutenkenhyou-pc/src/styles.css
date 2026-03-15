@@ -368,10 +368,16 @@ th, td {
   .sheet {
     border: 0;
     overflow: visible;
+    padding-right: 2mm;
   }
 
   table {
-    width: 100%;
+    width: calc(100% - 2mm);
+    margin-right: 2mm;
+  }
+
+  #inspectionTable {
+    border-right: 1px solid var(--grid);
   }
 
   th,
@@ -401,28 +407,28 @@ th, td {
   .maintenance-record-head,
   .maintenance-record-cell,
   .maintenance-record-footer {
-    width: 130px;
-    min-width: 130px;
+    width: 108px;
+    min-width: 108px;
   }
 
   .maintenance-record-cell {
-    padding: 4px 5px;
-    font-size: 7px;
+    padding: 3px 4px;
+    font-size: 6px;
   }
 
   .maintenance-record-list {
-    gap: 3px;
+    gap: 2px;
   }
 
   .category {
-    width: 72px;
-    font-size: 9px;
+    width: 56px;
+    font-size: 8px;
   }
 
   .content {
-    width: 152px;
-    font-size: 8px;
-    padding-left: 3px;
+    width: 144px;
+    font-size: 7px;
+    padding-left: 2px;
   }
 
   .day-label,
