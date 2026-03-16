@@ -146,6 +146,41 @@
   font-weight: 700;
 }
 
+.leaderboard-name-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.leaderboard-name-text {
+  font-weight: 700;
+}
+
+.leaderboard-breakdown-list {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.leaderboard-breakdown-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef4f9;
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.leaderboard-breakdown-points {
+  font-variant-numeric: tabular-nums;
+}
+
 .leaderboard-points {
   font-variant-numeric: tabular-nums;
   font-weight: 800;

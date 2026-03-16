@@ -848,6 +848,11 @@
       const existing = totalsByDriver.get(driverKey);
       if (existing) {
         existing.points += points;
+        existing.breakdowns.push({
+          vehicleKey: resolveRecordVehicleKey(record.data),
+          vehicleLabel: resolveRecordVehicleLabel(record.data),
+          points: points
+        });
         return;
       }
 
@@ -860,7 +865,12 @@
         key: driverKey,
         name: meta.name,
         order: meta.order,
-        points: points
+        points: points,
+        breakdowns: [{
+          vehicleKey: resolveRecordVehicleKey(record.data),
+          vehicleLabel: resolveRecordVehicleLabel(record.data),
+          points: points
+        }]
       });
     });
 
@@ -870,7 +880,8 @@
           key: driverKey,
           name: meta.name,
           order: meta.order,
-          points: 0
+          points: 0,
+          breakdowns: []
         });
       }
     });
@@ -897,10 +908,34 @@
 
     elements.leaderboardStatus.textContent = rows.length + "名のポイントを表示しています。";
     elements.leaderboardBody.innerHTML = rows.map(function (row, index) {
+      const breakdownMarkup = (Array.isArray(row.breakdowns) && row.breakdowns.length > 1
+        ? row.breakdowns.slice().sort(function (left, right) {
+            if (right.points !== left.points) {
+              return right.points - left.points;
+            }
+            return (left.vehicleLabel || left.vehicleKey || "").localeCompare(
+              right.vehicleLabel || right.vehicleKey || "",
+              "ja",
+              { numeric: true, sensitivity: "base" }
+            );
+          })
+        : []
+      ).map(function (breakdown) {
+        return [
+          '<span class="leaderboard-breakdown-item">',
+          '<span class="leaderboard-breakdown-vehicle">' + escapeHtml(breakdown.vehicleLabel || breakdown.vehicleKey || "") + "</span>",
+          '<span class="leaderboard-breakdown-points">' + String(breakdown.points) + "</span>",
+          "</span>"
+        ].join("");
+      }).join("");
+
       return [
         "<tr>",
         '<td class="leaderboard-rank">' + String(index + 1) + "</td>",
-        '<td class="leaderboard-name">' + escapeHtml(row.name) + "</td>",
+        '<td class="leaderboard-name"><div class="leaderboard-name-line">'
+          + '<span class="leaderboard-name-text">' + escapeHtml(row.name) + "</span>"
+          + (breakdownMarkup ? '<span class="leaderboard-breakdown-list">' + breakdownMarkup + "</span>" : "")
+          + "</div></td>",
         '<td class="leaderboard-points">' + String(row.points) + "</td>",
         "</tr>"
       ].join("");
@@ -923,6 +958,14 @@
       normalizeText
     );
     return values[0] || "";
+  }
+
+  function resolveRecordVehicleLabel(source) {
+    const safeSource = source && typeof source === "object" ? source : {};
+    return normalizeText(safeSource.vehicleNumber)
+      || normalizeText(safeSource.vehicle)
+      || normalizeText(safeSource.vehicleKey)
+      || normalizeText(safeSource.vehicleNo);
   }
 
   function resolveRecordDriverLabel(source) {
@@ -1144,6 +1187,9 @@
   }
 
   function setStatus(message, isError) {
+    if (!elements.statusText) {
+      return;
+    }
     elements.statusText.textContent = message || "";
     elements.statusText.style.color = isError ? "#b00020" : "";
   }
