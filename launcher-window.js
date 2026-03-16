@@ -1,6 +1,7 @@
 (function () {
   const FULL_WINDOW_QUERY_KEY = "windowMode";
   const FULL_WINDOW_QUERY_VALUE = "full";
+  const LAUNCHER_WINDOW_QUERY_VALUE = "launcher";
   const WINDOW_TOKEN_QUERY_KEY = "windowToken";
   const RETURN_CHANNEL_NAME = "launcher-return-channel";
   const RETURN_MESSAGE_TYPE = "return-to-launcher";
@@ -22,9 +23,9 @@
     return new URL(rawUrl, window.location.href);
   }
 
-  function createInspectionWindowUrl(rawUrl, windowToken) {
+  function createInspectionWindowUrl(rawUrl, windowToken, windowMode = FULL_WINDOW_QUERY_VALUE) {
     const targetUrl = resolveUrl(rawUrl);
-    targetUrl.searchParams.set(FULL_WINDOW_QUERY_KEY, FULL_WINDOW_QUERY_VALUE);
+    targetUrl.searchParams.set(FULL_WINDOW_QUERY_KEY, windowMode);
     targetUrl.searchParams.set(WINDOW_TOKEN_QUERY_KEY, windowToken);
     return targetUrl.toString();
   }
@@ -37,15 +38,28 @@
     return getWindowParams(search).get(FULL_WINDOW_QUERY_KEY) === FULL_WINDOW_QUERY_VALUE;
   }
 
+  function isManagedChildWindow(search = window.location.search) {
+    return Boolean(getWindowToken(search));
+  }
+
   function getWindowToken(search = window.location.search) {
     return getWindowParams(search).get(WINDOW_TOKEN_QUERY_KEY) || "";
   }
 
-  function buildPopupFeatures() {
-    const width = Math.max(window.screen?.availWidth || 1280, 960);
-    const height = Math.max(window.screen?.availHeight || 720, 720);
-    const left = Math.max(Math.floor(((window.screen?.availWidth || width) - width) / 2), 0);
-    const top = Math.max(Math.floor(((window.screen?.availHeight || height) - height) / 2), 0);
+  function buildPopupFeatures(windowMode = FULL_WINDOW_QUERY_VALUE) {
+    const isLauncherSizeMode = windowMode === LAUNCHER_WINDOW_QUERY_VALUE;
+    const width = isLauncherSizeMode
+      ? Math.max(window.outerWidth || window.innerWidth || 960, 640)
+      : Math.max(window.screen?.availWidth || 1280, 960);
+    const height = isLauncherSizeMode
+      ? Math.max(window.outerHeight || window.innerHeight || 720, 480)
+      : Math.max(window.screen?.availHeight || 720, 720);
+    const left = isLauncherSizeMode
+      ? Math.max(window.screenX || window.screenLeft || 0, 0)
+      : Math.max(Math.floor(((window.screen?.availWidth || width) - width) / 2), 0);
+    const top = isLauncherSizeMode
+      ? Math.max(window.screenY || window.screenTop || 0, 0)
+      : Math.max(Math.floor(((window.screen?.availHeight || height) - height) / 2), 0);
 
     return [
       "popup=yes",
@@ -171,10 +185,10 @@
     return closeInspectionWindow(window);
   }
 
-  function openInspectionWindow(rawUrl) {
+  function openInspectionWindow(rawUrl, windowMode = FULL_WINDOW_QUERY_VALUE) {
     const windowToken = createWindowToken();
-    const targetUrl = createInspectionWindowUrl(rawUrl, windowToken);
-    const popup = window.open("", "_blank", buildPopupFeatures());
+    const targetUrl = createInspectionWindowUrl(rawUrl, windowToken, windowMode);
+    const popup = window.open("", "_blank", buildPopupFeatures(windowMode));
 
     if (popup && !popup.closed) {
       try {
@@ -199,6 +213,17 @@
     link.addEventListener("click", function (event) {
       event.preventDefault();
       openInspectionWindow(link.href);
+    });
+  }
+
+  function bindLauncherSizedLaunch(link) {
+    if (!link) {
+      return;
+    }
+
+    link.addEventListener("click", function (event) {
+      event.preventDefault();
+      openInspectionWindow(link.href, LAUNCHER_WINDOW_QUERY_VALUE);
     });
   }
 
@@ -233,7 +258,7 @@
     }
 
     link.addEventListener("click", function (event) {
-      if (!isFullWindowMode()) {
+      if (!isManagedChildWindow()) {
         return;
       }
 
@@ -267,6 +292,7 @@
 
   window.launcherWindow = {
     bindInspectionLaunch: bindInspectionLaunch,
+    bindLauncherSizedLaunch: bindLauncherSizedLaunch,
     maximizeCurrentWindowIfRequested: maximizeCurrentWindowIfRequested,
     bindReturnToLauncher: bindReturnToLauncher,
     closeInspectionWindow: closeInspectionWindow,
